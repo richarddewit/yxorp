@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+#
+### Slyfile - used by sly
+### https://github.com/richarddewit/sly
+
+ssl_dir="$(pwd)/certs"
+
+start() {
+  docker run --rm -d \
+    --name nginx-proxy \
+    --network="host" \
+    -v "$ssl_dir":/etc/nginx/ssl:ro \
+    -v $(pwd)/config/nginx.conf:/etc/nginx/nginx.conf:ro \
+    -v $(pwd)/config/dhparam.pem:/etc/nginx/dhparam.pem:ro \
+    -v $(pwd)/config/nginxconfig.io:/etc/nginx/nginxconfig.io:ro \
+    -v $(pwd)/sites-available:/etc/nginx/sites-available:ro \
+    -v $(pwd)/sites-enabled:/etc/nginx/sites-enabled:ro \
+    nginx:alpine
+}
+
+stop() {
+  docker stop nginx-proxy
+}
+
+restart() {
+  stop
+  start
+}
+
+dhparam() {
+  openssl dhparam -out config/dhparam.pem 2048
+}
+
+create_site() {
+  [ -z "$1" ] && echo "No host specified" && exit 1
+  [ -z "$2" ] && echo "No port specified" && exit 1
+  APP_HOST="$1" \
+  APP_PORT="$2" \
+  envsubst '$APP_HOST $APP_PORT' < template.conf > "sites-available/$1.conf"
+}
+
+cert() {
+  [ -z "$1" ] && echo "No host specified" && exit 1
+  mkcert -cert-file "${ssl_dir}/$1.pem" -key-file "${ssl_dir}/$1-key.pem" "$1"
+  cat "$(mkcert -CAROOT)/rootCA.pem" >> "${ssl_dir}/$1.pem"
+}
+
+link() {
+  [ -z "$1" ] && echo "No host specified" && exit 1
+  ln -sf "../sites-available/$1.conf" "sites-enabled/$1.conf"
+}
+
+unlink() {
+  [ -z "$1" ] && echo "No host specified" && exit 1
+  rm "sites-enabled/$1.conf"
+}
+
+add() {
+  [ -z "$1" ] && echo "No host specified" && exit 1
+  [ -z "$2" ] && echo "No port specified" && exit 1
+
+  cert "$1"
+  hosts add "$1"
+  create_site "$1" "$2"
+  link "$1"
+}
+
+remove() {
+  [ -z "$1" ] && echo "No host specified" && exit 1
+  rm "${ssl_dir}/$1.pem" "${ssl_dir}/$1-key.pem"
+  hosts remove "$1"
+  unlink "$1"
+}

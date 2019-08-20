@@ -1,0 +1,5 @@
+certs/*
+sites-available/*
+sites-enabled/*
+config/dhparam.pem
+!.keep
