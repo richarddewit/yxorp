@@ -4,10 +4,11 @@
 ### https://github.com/richarddewit/sly
 
 ssl_dir="$(pwd)/certs"
+container_name="nginx-proxy"
 
 start() {
   docker run --rm -d \
-    --name nginx-proxy \
+    --name "$container_name" \
     --network="host" \
     -v "$ssl_dir":/etc/nginx/ssl:ro \
     -v $(pwd)/config/nginx.conf:/etc/nginx/nginx.conf:ro \
@@ -29,6 +30,10 @@ restart() {
 
 dhparam() {
   openssl dhparam -out config/dhparam.pem 2048
+}
+
+test() {
+  docker exec "$container_name" nginx -t
 }
 
 create_site() {
@@ -70,4 +75,13 @@ remove() {
   rm "${ssl_dir}/$1.pem" "${ssl_dir}/$1-key.pem"
   hosts remove "$1"
   unlink "$1"
+}
+
+list() {
+  [[ "$1" =~ ^(available|enabled)$ ]] || {
+    echo "Invalid list command, use 'available' or 'enabled'"
+    exit 1
+  }
+  dir="sites-$1"
+  ls "$dir"/*.conf | sed -En 's#^'"$dir"'/(.*)\.conf$#\1#p'
 }
