@@ -11,7 +11,7 @@ If you normally develop using an URL like http://localhost:1337, you can use thi
 | [docker](https://docs.docker.com/install/) | Run the proxy inside a container |
 | [mkcert](https://github.com/FiloSottile/mkcert) | Create and auto-trust self-signed certificates |
 | [sly](https://richarddewit.github.io/sly/) | Command line tool using plain Bash functions |
-| [hosts](https://github.com/richarddewit/hosts) | Add and remove hostnames to `/etc/hosts` |
+| [emcee](https://github.com/richarddewit/emcee) | Add and remove hostnames in `/etc/hosts` |
 
 ## Get started
 

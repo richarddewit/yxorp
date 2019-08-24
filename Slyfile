@@ -65,7 +65,7 @@ add() {
   [ -z "$2" ] && echo "No port specified" && exit 1
 
   cert "$1"
-  hosts add "$1"
+  emcee add "$1"
   create_site "$1" "$2"
   link "$1"
 }
@@ -73,7 +73,7 @@ add() {
 remove() {
   [ -z "$1" ] && echo "No host specified" && exit 1
   rm "${ssl_dir}/$1.pem" "${ssl_dir}/$1-key.pem"
-  hosts remove "$1"
+  emcee remove "$1"
   unlink "$1"
 }
 
