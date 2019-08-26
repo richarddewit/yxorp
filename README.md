@@ -1,6 +1,6 @@
-# Drop-in nginx local development proxy with SSL
+# eezkorp
 
-A drop-in proxy container for *anything* running locally, even Docker containers with a mapped port. **No need** to add some `network` to your existing Docker config. Just `sly add ...` and you're good to go.
+A drop-in **nginx reverse proxy** with SSL for *anything* running locally, even Docker containers with a mapped port. **No need** to add some `network` to your existing Docker config. Just `sly add ...` and you're good to go.
 
 If you normally develop using an URL like http://localhost:1337, you can use this proxy to start using https://coolapp.test (note the http**s**, yes there are SSLs!).
 
@@ -31,7 +31,7 @@ Now you can visit https://coolapp.test
 ## How it works
 
 The nginx container runs with `--network="host"` to be able to proxy to any locally running development server like `npm run dev`, `rails s`, `django-admin runserver`, `mix phx.server`, etc.
-Just find the port the app is running on, think of a hostname (add it to the app's "allowed hosts" if needed) and create the config for by running `sly add <hostname> <port>` in the nginx-proxy folder.
+Just find the port the app is running on, think of a hostname (add it to the app's "allowed hosts" if needed) and create the config for by running `sly add <hostname> <port>` in the **eezkorp** folder.
 
 ## Important
 
