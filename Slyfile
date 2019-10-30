@@ -39,25 +39,30 @@ test() {
 create_site() {
   [ -z "$1" ] && echo "No host specified" && exit 1
   [ -z "$2" ] && echo "No port specified" && exit 1
+  wc="${1/\*/_wildcard}"
   APP_HOST="$1" \
+  APP_HOST_WC="$wc" \
   APP_PORT="$2" \
-  envsubst '$APP_HOST $APP_PORT' < template.conf > "sites-available/$1.conf"
+  envsubst '$APP_HOST $APP_HOST_WC $APP_PORT' < template.conf > "sites-available/${wc}.conf"
 }
 
 cert() {
   [ -z "$1" ] && echo "No host specified" && exit 1
-  mkcert -cert-file "${ssl_dir}/$1.pem" -key-file "${ssl_dir}/$1-key.pem" "$1"
-  cat "$(mkcert -CAROOT)/rootCA.pem" >> "${ssl_dir}/$1.pem"
+  wc="${1/\*/_wildcard}"
+  mkcert -cert-file "${ssl_dir}/${wc}.pem" -key-file "${ssl_dir}/${wc}-key.pem" "$1"
+  cat "$(mkcert -CAROOT)/rootCA.pem" >> "${ssl_dir}/${wc}.pem"
 }
 
 link() {
   [ -z "$1" ] && echo "No host specified" && exit 1
-  ln -sf "../sites-available/$1.conf" "sites-enabled/$1.conf"
+  wc="${1/\*/_wildcard}"
+  ln -sf "../sites-available/${wc}.conf" "sites-enabled/${wc}.conf"
 }
 
 unlink() {
   [ -z "$1" ] && echo "No host specified" && exit 1
-  rm "sites-enabled/$1.conf"
+  wc="${1/\*/_wildcard}"
+  rm "sites-enabled/${wc}.conf"
 }
 
 add() {
@@ -72,7 +77,8 @@ add() {
 
 remove() {
   [ -z "$1" ] && echo "No host specified" && exit 1
-  rm "${ssl_dir}/$1.pem" "${ssl_dir}/$1-key.pem"
+  wc="${1/\*/_wildcard}"
+  rm "${ssl_dir}/${wc}.pem" "${ssl_dir}/${wc}-key.pem"
   emcee remove "$1"
   unlink "$1"
 }
