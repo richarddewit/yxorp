@@ -36,6 +36,10 @@ test() {
   docker exec "$container_name" nginx -t
 }
 
+reload() {
+  docker exec "$container_name" nginx -s reload
+}
+
 create_site() {
   [ -z "$1" ] && echo "No host specified" && exit 1
   [ -z "$2" ] && echo "No port specified" && exit 1
@@ -74,6 +78,7 @@ add() {
   emcee add "$1"
   create_site "$1" "$2"
   link "$1"
+  test && reload
 }
 
 remove() {
@@ -82,6 +87,7 @@ remove() {
   rm "${ssl_dir}/${wc}.pem" "${ssl_dir}/${wc}-key.pem"
   emcee remove "$1"
   unlink "$1"
+  reload
 }
 
 list() {
