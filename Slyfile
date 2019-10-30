@@ -20,7 +20,7 @@ start() {
 }
 
 stop() {
-  docker stop eezkorp
+  docker stop "$container_name"
 }
 
 restart() {
