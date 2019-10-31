@@ -28,6 +28,43 @@ $ sly start
 
 Now you can visit https://coolapp.test
 
+### Wildcard domains
+
+You can create a wildcard configuration, however the `/etc/hosts` file doesn't understand that. You'll need to use [`dnsmasq`](http://www.thekelleys.org.uk/dnsmasq/doc.html) to route the base domain or TLD to localhost.
+
+Create the configs and certificates:
+
+```bash
+# Escape the asterisk with a \ to avoid possible side-effects
+$ sly add \*.coolapp.test 8000
+```
+
+Install `dnsmasq` and create a new file named `/etc/NetworkManager/dnsmasq.d/dnsmasq-localhost.conf` with the following contents:
+
+```bash
+address=/coolapp.test/127.0.0.1
+```
+
+Or when you want to route **all** domains ending with the `.test` TLD:
+
+```bash
+local=/test/
+address=/test/127.0.0.1
+```
+
+Now restart `dnsmasq`:
+
+```bash
+# Depending on your OS/Distro, run only one:
+$ systemctl restart NetworkManager.service
+$ systemctl restart dnsmasq
+# Not sure which one to use? Run:
+$ systemctl status dnsmasq
+# If it's disabled, run the NetworkManager one
+```
+
+Now you can visit https://nice.coolapp.test
+
 ## How it works
 
 The nginx container runs with `--network="host"` to be able to proxy to any locally running development server like `npm run dev`, `rails s`, `django-admin runserver`, `mix phx.server`, etc.
