@@ -4,6 +4,8 @@ A drop-in **nginx reverse proxy** with SSL for *anything* running locally, even 
 
 If you normally develop using an URL like http://localhost:1337, you can use this proxy to start using https://coolapp.test (note the http**s**, yes there are SSLs!).
 
+> _Note: This does not work for MacOS, because [host networking is unsupported](https://github.com/docker/for-mac/issues/2716)._
+
 ## Dependencies
 
 | Tool | Description |
@@ -72,5 +74,6 @@ Just find the port the app is running on, think of a hostname (add it to the app
 
 ## Important
 
-- This has only been tested on Linux
+- This has only been tested on _Linux_
+- Does not work on MacOS, because [host networking is unsupported](https://github.com/docker/for-mac/issues/2716)
 - Using `--network="host"`, the Docker container "claims" ports 80 and 443, so make sure no other application is using these ports
