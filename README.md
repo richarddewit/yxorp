@@ -41,7 +41,7 @@ Create the configs and certificates:
 $ sly add \*.coolapp.test 8000
 ```
 
-Install `dnsmasq` and create a new file named `/etc/NetworkManager/dnsmasq.d/dnsmasq-localhost.conf` with the following contents:
+Install `dnsmasq` and create a new file named `/etc/NetworkManager/dnsmasq.d/00-localhost.conf` with the following contents:
 
 ```bash
 address=/coolapp.test/127.0.0.1
@@ -54,16 +54,44 @@ local=/test/
 address=/test/127.0.0.1
 ```
 
-Now restart `dnsmasq`:
+#### NetworkManager and dnsmasq
+
+When using NetworkManager, make sure it is using `dnsmasq`.
+
+Check if NetworkManager already uses dnsmasq:
 
 ```bash
-# Depending on your OS/Distro, run only one:
-$ systemctl restart NetworkManager.service
-$ systemctl restart dnsmasq
-# Not sure which one to use? Run:
-$ systemctl status dnsmasq
-# If it's disabled, run the NetworkManager one
+$ grep -nrw "dns=dnsmasq" /etc/NetworkManager/conf.d
 ```
+
+If the output is blank, create a new file:
+
+```bash
+$ sudoedit /etc/NetworkManager/conf.d/00-use-dnsmasq.conf
+```
+
+And put this in the file:
+
+```conf
+[main]
+dns=dnsmasq
+```
+
+Then restart `NetworkManager`:
+
+```bash
+$ systemctl restart NetworkManager.service
+```
+
+#### Just dnsmasq
+
+When not using NetworkManager, just restart `dnsmasq` itself:
+
+```bash
+$ systemctl restart dnsmasq
+```
+
+#### Done!
 
 Now you can visit https://nice.coolapp.test
 
