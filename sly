@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+## Colors
+red=31
+green=32
+yellow=33
+bold=$(tput smul)
+reset=$(tput sgr0)
+
+
+# Utils
+sly_print_color() {
+  printf "\e[%sm%s\e[m" "$1" "$2"
+}
+
+sly_prepend() {
+  color="${2-$yellow}"
+  prefix="$(sly_print_color "$color" "$(printf "%-3s | " "${1-${sly_prefix-SLY}}")")"
+  while IFS= read -r line; do
+    >&2 echo -e "${prefix}${line}"
+  done
+}
+
+sly_error() {
+  printf '\a%s\n' "$1" | sly_prepend "ERROR" $red >&2
+}
+
+sly_done() {
+  printf '\a%s\n' "$1" | sly_prepend "DONE " $green >&2
+}
+
+sly_available_functions() {
+  # Ignore functions starting with `sly_` or with an underscore
+  declare -F | awk '{print $NF}' | sort | grep -Ev "^(sly)?_"
+}
+
+
+# Commands
+sly_exec() {
+  # if [ -z "$(command -v "$1")" ]; then
+  if [ -z "$(sly_available_functions | grep "$1")" ]; then
+    sly_error "There is no function called ${bold}${1}${reset}"
+    exit 1
+  fi
+
+  echo "Executing function: ${bold}${1}${reset}" | sly_prepend
+  if [ "$verbose" = true ]; then
+    declare -f "$1" | sly_prepend
+  fi
+
+  "$@"
+}
+
+sly_list() {
+  echo "Available commands:" | sly_prepend
+  echo "" | sly_prepend
+  sly_available_functions | sly_prepend
+  exit 0
+}
+
+
+# Execution
+[[ "$1" =~ ^(-v|--verbose)$ ]] && verbose=true && shift
+
+cmd="$1"
+[ -z "$cmd" ] && sly_error "Missing argument COMMAND" && cmd="--help"
+[[ "$cmd" =~ ^sly_ ]] && sly_error "The sly_ prefix is reserved for sly internal functions" && exit 1
+[[ "$cmd" =~ ^_ ]] && sly_error "Functions prefixed with an underscore are considered \"private\" and shouldn't be called directly" && exit 1
+[[ "$cmd" =~ ^(-l|--list)$ ]] && sly_list
+
+(sly_exec "$@")

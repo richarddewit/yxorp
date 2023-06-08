@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-#
-### Slyfile - used by sly
-### https://github.com/richarddewit/sly
 
+sly_prefix="YXORP"
 ssl_dir="$(pwd)/certs"
-container_name="eezkorp"
+container_name="yxorp"
 
 start() {
+  [ -n "$(docker ps -a | grep $container_name)" ] && echo "Already running. To restart, run $0 restart" | sly_prepend && exit 1
+
   docker run --rm -d \
     --name "$container_name" \
     --network="host" \
@@ -16,11 +16,13 @@ start() {
     -v "$(pwd)/config/nginxconfig.io":/etc/nginx/nginxconfig.io:ro \
     -v "$(pwd)/sites-available":/etc/nginx/sites-available:ro \
     -v "$(pwd)/sites-enabled":/etc/nginx/sites-enabled:ro \
-    nginx:alpine
+    nginx:alpine | sly_prepend \
+    && sly_done "Reverse proxy started!"
 }
 
 stop() {
-  docker stop "$container_name"
+  docker stop "$container_name" > /dev/null \
+    && sly_done "Reverse proxy stopped"
 }
 
 restart() {
@@ -40,9 +42,9 @@ reload() {
   docker exec "$container_name" nginx -s reload
 }
 
-create_site() {
-  [ -z "$1" ] && echo "No host specified" && exit 1
-  [ -z "$2" ] && echo "No port specified" && exit 1
+_create_site() {
+  [ -z "$1" ] && sly_error "No host specified" && exit 1
+  [ -z "$2" ] && sly_error "No port specified" && exit 1
   wc="${1/\*/_wildcard}"
   # shellcheck disable=SC2016
   APP_HOST="$1" \
@@ -51,50 +53,52 @@ create_site() {
   envsubst '$APP_HOST $APP_HOST_WC $APP_PORT' < template.conf > "sites-available/${wc}.conf"
 }
 
-cert() {
-  [ -z "$1" ] && echo "No host specified" && exit 1
+_cert() {
+  [ -z "$1" ] && sly_error "No host specified" && exit 1
   wc="${1/\*/_wildcard}"
   mkcert -cert-file "${ssl_dir}/${wc}.pem" -key-file "${ssl_dir}/${wc}-key.pem" "$1"
   cat "$(mkcert -CAROOT)/rootCA.pem" >> "${ssl_dir}/${wc}.pem"
 }
 
-link() {
-  [ -z "$1" ] && echo "No host specified" && exit 1
+_link() {
+  [ -z "$1" ] && sly_error "No host specified" && exit 1
   wc="${1/\*/_wildcard}"
   ln -sf "../sites-available/${wc}.conf" "sites-enabled/${wc}.conf"
 }
 
-unlink() {
-  [ -z "$1" ] && echo "No host specified" && exit 1
+_unlink() {
+  [ -z "$1" ] && sly_error "No host specified" && exit 1
   wc="${1/\*/_wildcard}"
   rm "sites-enabled/${wc}.conf"
 }
 
 add() {
-  [ -z "$1" ] && echo "No host specified" && exit 1
-  [ -z "$2" ] && echo "No port specified" && exit 1
+  [ -z "$1" ] && sly_error "No host specified" && exit 1
+  [ -z "$2" ] && sly_error "No port specified" && exit 1
 
-  cert "$1"
+  _cert "$1"
   emcee add "$1"
-  create_site "$1" "$2"
-  link "$1"
+  _create_site "$1" "$2"
+  _link "$1"
   test && reload
 }
 
 remove() {
-  [ -z "$1" ] && echo "No host specified" && exit 1
+  [ -z "$1" ] && sly_error "No host specified" && exit 1
   wc="${1/\*/_wildcard}"
   rm "${ssl_dir}/${wc}.pem" "${ssl_dir}/${wc}-key.pem"
   emcee remove "$1"
-  unlink "$1"
+  _unlink "$1"
   reload
 }
 
 list() {
   [[ "$1" =~ ^(available|enabled)$ ]] || {
-    echo "Invalid list command, use 'available' or 'enabled'"
+    sly_error "Invalid list command, use 'available' or 'enabled'"
     exit 1
   }
   dir="sites-$1"
   find "$dir"/*.conf | sed -En 's#^'"$dir"'/(.*)\.conf$#\1#p'
 }
+
+source ./sly
